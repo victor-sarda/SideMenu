@@ -240,10 +240,10 @@ open class SideMenuController: UIViewController {
     }
 
     private func changeMenuVisibility(reveal: Bool,
-                                      animated: Bool = true,
-                                      shouldCallDelegate: Bool = true,
-                                      shouldChangeStatusBar: Bool = true,
-                                      completion: ((Bool) -> Void)? = nil) {
+        animated: Bool = true,
+        shouldCallDelegate: Bool = true,
+        shouldChangeStatusBar: Bool = true,
+        completion: ((Bool) -> Void)? = nil) {
         menuViewController.beginAppearanceTransition(true, animated: true)
 
         if shouldCallDelegate {
@@ -289,9 +289,9 @@ open class SideMenuController: UIViewController {
 
         if animated {
             animateMenu(with: reveal,
-                        shouldChangeStatusBar: shouldChangeStatusBar,
-                        animations: animationClosure,
-                        completion: animationCompletionClosure)
+                shouldChangeStatusBar: shouldChangeStatusBar,
+                animations: animationClosure,
+                completion: animationCompletionClosure)
         } else {
             setStatusBar(hidden: reveal)
             animationClosure()
@@ -302,42 +302,50 @@ open class SideMenuController: UIViewController {
     }
 
     private func animateMenu(with reveal: Bool,
-                             shouldChangeStatusBar: Bool = true,
-                             animations: @escaping () -> Void,
-                             completion: ((Bool) -> Void)? = nil) {
+        shouldChangeStatusBar: Bool = true,
+        animations: @escaping () -> Void,
+        completion: ((Bool) -> Void)? = nil) {
         let shouldAnimateStatusBarChange = preferences.basic.statusBarBehavior != .hideOnMenu
         if shouldChangeStatusBar && !shouldAnimateStatusBarChange && reveal {
             setStatusBar(hidden: reveal)
         }
         let duration = reveal ? preferences.animation.revealDuration : preferences.animation.hideDuration
         UIView.animate(withDuration: duration,
-                       delay: 0,
-                       usingSpringWithDamping: preferences.animation.dampingRatio,
-                       initialSpringVelocity: preferences.animation.initialSpringVelocity,
-                       options: preferences.animation.options,
-                       animations: {
-                        if shouldChangeStatusBar && shouldAnimateStatusBarChange {
-                            self.setStatusBar(hidden: reveal)
-                        }
+            delay: 0,
+            usingSpringWithDamping: preferences.animation.dampingRatio,
+            initialSpringVelocity: preferences.animation.initialSpringVelocity,
+            options: preferences.animation.options,
+            animations: {
+                if shouldChangeStatusBar && shouldAnimateStatusBarChange {
+                    self.setStatusBar(hidden: reveal)
+                }
 
-                        animations()
-        }, completion: { (finished) in
-            if shouldChangeStatusBar && !shouldAnimateStatusBarChange && !reveal {
-                self.setStatusBar(hidden: reveal)
-            }
+                animations()
+            }, completion: { (finished) in
+                if shouldChangeStatusBar && !shouldAnimateStatusBarChange && !reveal {
+                    self.setStatusBar(hidden: reveal)
+                }
 
-            completion?(finished)
-        })
+                completion?(finished)
+            })
     }
 
     // MARK: Gesture Recognizer
 
     private func configureGesturesRecognizer() {
         // The gesture will be added anyway, its delegate will tell whether it should be recognized
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(SideMenuController.handlePanGesture(_:)))
-        panGesture.delegate = self
-        panGestureRecognizer = panGesture
-        view.addGestureRecognizer(panGesture)
+
+        let dragGesture = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
+        dragGesture.edges = .left
+
+        view.isUserInteractionEnabled = true
+        view.addGestureRecognizer(dragGesture)
+
+        let menuPanGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
+        menuContainerView.isUserInteractionEnabled = true
+        menuPanGesture.delegate = self
+        panGestureRecognizer = menuPanGesture
+        menuContainerView.addGestureRecognizer(menuPanGesture)
     }
 
     private func addContentOverlayViewIfNeeded() {
@@ -357,7 +365,7 @@ open class SideMenuController: UIViewController {
 
         // UIKit can coordinate overlay's tap gesture and controller view's pan gesture correctly
         let tapToHideGesture = UITapGestureRecognizer()
-        tapToHideGesture.addTarget(self, action: #selector(SideMenuController.handleTapGesture(_:)))
+        tapToHideGesture.addTarget(self, action: #selector(handleTapGesture(_:)))
         overlay.addGestureRecognizer(tapToHideGesture)
 
         contentContainerView.insertSubview(overlay, aboveSubview: contentViewController.view)
@@ -427,7 +435,7 @@ open class SideMenuController: UIViewController {
             }
 
             let factor: CGFloat = isLeft ? 1 : -1
-            let notReachDesiredBorder = isLeft ? resultX <= rightBorder : resultX >= leftBorder
+            let notReachDesiredBorder = isLeft ? resultX <= rightBorder: resultX >= leftBorder
             if notReachDesiredBorder {
                 viewToAnimate.frame.origin.x = resultX
             } else {
@@ -477,9 +485,9 @@ open class SideMenuController: UIViewController {
 
     private func setUpNotifications() {
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(SideMenuController.appDidEnteredBackground),
-                                               name: UIApplication.didEnterBackgroundNotification,
-                                               object: nil)
+            selector: #selector(SideMenuController.appDidEnteredBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil)
     }
 
     private func unregisterNotifications() {
@@ -569,8 +577,8 @@ open class SideMenuController: UIViewController {
     ///
     /// - Parameter identifier: the identifier that associates with a cache view controller or generator.
     open func setContentViewController(with identifier: String,
-                                       animated: Bool = false,
-                                       completion: (() -> Void)? = nil) {
+        animated: Bool = false,
+        completion: (() -> Void)? = nil) {
         if let viewController = lazyCachedViewControllers[identifier] {
             setContentViewController(to: viewController, animated: animated, completion: completion)
         } else if let viewController = lazyCachedViewControllerGenerators[identifier]?() {
@@ -583,8 +591,8 @@ open class SideMenuController: UIViewController {
     }
 
     open func setContentViewController(to viewController: UIViewController,
-                                       animated: Bool = false,
-                                       completion: (() -> Void)? = nil) {
+        animated: Bool = false,
+        completion: (() -> Void)? = nil) {
         guard contentViewController !== viewController && isViewLoaded else {
             completion?()
             return
@@ -600,20 +608,20 @@ open class SideMenuController: UIViewController {
             viewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
             let animatorFromDelegate = delegate?.sideMenuController(self,
-                                                                    animationControllerFrom: contentViewController,
-                                                                    to: viewController)
+                animationControllerFrom: contentViewController,
+                to: viewController)
 
             #if DEBUG
-            if animatorFromDelegate == nil {
-                // swiftlint:disable:next line_length
-                print("[SideMenu] `setContentViewController` is called with animated while the delegate method return nil, fall back to the fade animation.")
-            }
+                if animatorFromDelegate == nil {
+                    // swiftlint:disable:next line_length
+                    print("[SideMenu] `setContentViewController` is called with animated while the delegate method return nil, fall back to the fade animation.")
+                }
             #endif
 
             let animator = animatorFromDelegate ?? BasicTransitionAnimator()
 
             let transitionContext = SideMenuController.TransitionContext(with: contentViewController,
-                                                                         toViewController: viewController)
+                toViewController: viewController)
             transitionContext.isAnimated = true
             transitionContext.isInteractive = false
             transitionContext.completion = { finish in
@@ -711,9 +719,9 @@ open class SideMenuController: UIViewController {
             coordinator.animate(alongsideTransition: { _ in
                 self.contentContainerView.frame = self.contentFrame(visibility: self.isMenuRevealed, targetSize: size)
             }, completion: { (_) in
-                self.menuContainerView.isHidden = false
-                self.menuContainerView.frame = self.sideMenuFrame(visibility: self.isMenuRevealed, targetSize: size)
-            })
+                    self.menuContainerView.isHidden = false
+                    self.menuContainerView.frame = self.sideMenuFrame(visibility: self.isMenuRevealed, targetSize: size)
+                })
         })
 
         super.viewWillTransition(to: size, with: coordinator)
@@ -756,7 +764,7 @@ extension SideMenuController: UIGestureRecognizerDelegate {
             let viewController = view.parentViewController else {
                 return false
         }
-        
+
         if let navigationController = viewController as? UINavigationController {
             return navigationController.viewControllers.count > 1
         } else if let navigationController = viewController.navigationController {
